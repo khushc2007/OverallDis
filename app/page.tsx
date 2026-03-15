@@ -3,55 +3,38 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-// ── Change background images here ──────────────────────────────────────────
 const sections = [
   {
     id: "project",
     name: "Project Info",
     shortName: "Project",
     href: "https://0-2-xi.vercel.app",
-    background: "/bg-default.jpg", // replace with your image
-    fallback: "https://images.pexels.com/photos/3785927/pexels-photo-3785927.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    background: "/bg-project.jpg",
   },
   {
     id: "model",
     name: "3D Model",
     shortName: "Model",
     href: "https://0-2-xi.vercel.app",
-    background: "/bg-default.jpg",
-    fallback: "https://images.pexels.com/photos/1910396/pexels-photo-1910396.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    background: "/bg-model.jpg",
   },
   {
     id: "dashboard",
     name: "Dashboard",
     shortName: "Dashboard",
     href: "https://login-jdj8.vercel.app",
-    background: "/bg-default.jpg",
-    fallback: "https://images.pexels.com/photos/256658/pexels-photo-256658.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    background: "/bg-dashboard.jpg",
   },
   {
     id: "team",
     name: "Team Info",
     shortName: "Team",
-    href: "https://0-2-xi.vercel.app",
-    background: "/bg-default.jpg",
-    fallback: "https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&w=1920",
+    href: "https://teaminfo-nu.vercel.app",
+    background: "/bg-team.jpg",
   },
 ];
 
-function useImageSrc(primary: string, fallback: string) {
-  const [src, setSrc] = useState(fallback);
-  useEffect(() => {
-    const img = new window.Image();
-    img.onload = () => setSrc(primary);
-    img.onerror = () => setSrc(fallback);
-    img.src = primary;
-  }, [primary, fallback]);
-  return src;
-}
-
 function BgSlide({ section, active }: { section: typeof sections[0]; active: boolean }) {
-  const src = useImageSrc(section.background, section.fallback);
   return (
     <motion.div
       className="absolute inset-0"
@@ -61,16 +44,14 @@ function BgSlide({ section, active }: { section: typeof sections[0]; active: boo
     >
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${src})` }}
+        style={{ backgroundImage: `url(${section.background})` }}
       />
-      {/* layered overlays for depth */}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.2) 40%, rgba(0,0,0,0.55) 100%)" }} />
-      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 100%)" }} />
-      {/* grain */}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.6) 100%)" }} />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.55) 100%)" }} />
       <div
         className="absolute inset-0 pointer-events-none mix-blend-overlay"
         style={{
-          opacity: 0.08,
+          opacity: 0.07,
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         }}
       />
@@ -83,6 +64,7 @@ export default function WaterIQ() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const lastScroll = useRef(0);
   const touchStartY = useRef(0);
+  const touchStartX = useRef(0);
 
   const navigate = useCallback((dir: 1 | -1) => {
     const now = Date.now();
@@ -105,21 +87,38 @@ export default function WaterIQ() {
   }, [isTransitioning, activeIndex]);
 
   useEffect(() => {
-    const onWheel = (e: WheelEvent) => { e.preventDefault(); if (Math.abs(e.deltaY) > 15) navigate(e.deltaY > 0 ? 1 : -1); };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      if (Math.abs(e.deltaY) > 15) navigate(e.deltaY > 0 ? 1 : -1);
+    };
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
   }, [navigate]);
 
   useEffect(() => {
-    const onTS = (e: TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
-    const onTE = (e: TouchEvent) => { const d = touchStartY.current - e.changedTouches[0].clientY; if (Math.abs(d) > 35) navigate(d > 0 ? 1 : -1); };
+    const onTS = (e: TouchEvent) => {
+      touchStartY.current = e.touches[0].clientY;
+      touchStartX.current = e.touches[0].clientX;
+    };
+    const onTE = (e: TouchEvent) => {
+      const dy = touchStartY.current - e.changedTouches[0].clientY;
+      const dx = Math.abs(touchStartX.current - e.changedTouches[0].clientX);
+      // Only navigate if vertical swipe is dominant
+      if (Math.abs(dy) > 40 && Math.abs(dy) > dx) navigate(dy > 0 ? 1 : -1);
+    };
     window.addEventListener("touchstart", onTS, { passive: true });
     window.addEventListener("touchend", onTE, { passive: true });
-    return () => { window.removeEventListener("touchstart", onTS); window.removeEventListener("touchend", onTE); };
+    return () => {
+      window.removeEventListener("touchstart", onTS);
+      window.removeEventListener("touchend", onTE);
+    };
   }, [navigate]);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "ArrowDown") navigate(1); if (e.key === "ArrowUp") navigate(-1); };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") navigate(1);
+      if (e.key === "ArrowUp") navigate(-1);
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [navigate]);
@@ -127,33 +126,29 @@ export default function WaterIQ() {
   const active = sections[activeIndex];
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-black select-none cursor-default">
+    <div className="fixed inset-0 overflow-hidden bg-black select-none cursor-default touch-none">
 
-      {/* All backgrounds preloaded */}
+      {/* Preloaded backgrounds */}
       {sections.map((s, i) => (
         <BgSlide key={s.id} section={s} active={i === activeIndex} />
       ))}
 
-      {/* ── HEADER ──────────────────────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex justify-center items-start pt-7 md:pt-10 pointer-events-none">
+      {/* ── HEADER ── */}
+      <div className="absolute top-0 left-0 right-0 z-30 flex justify-center items-start pt-6 md:pt-10 pointer-events-none">
         <div className="text-center" style={{ fontFamily: "var(--font-instrument-serif), Georgia, serif" }}>
-          <div className="text-white/50 italic" style={{ fontSize: "clamp(0.65rem, 1.8vw, 1.1rem)", letterSpacing: "0.35em", textTransform: "uppercase" }}>
+          <div className="text-white/50 italic" style={{ fontSize: "clamp(0.6rem, 1.8vw, 1rem)", letterSpacing: "0.35em", textTransform: "uppercase" }}>
             The
           </div>
-          <div className="text-white font-bold italic" style={{ fontSize: "clamp(1.8rem, 5.5vw, 4.5rem)", lineHeight: 1, letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          <div className="text-white font-bold italic" style={{ fontSize: "clamp(1.6rem, 5.5vw, 4.5rem)", lineHeight: 1, letterSpacing: "0.05em", textTransform: "uppercase" }}>
             WATER IQ
           </div>
         </div>
       </div>
 
-      {/* ── LEFT SIDEBAR ─────────────────────────── */}
-      <div className="absolute left-4 md:left-8 lg:left-12 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 md:gap-2.5">
+      {/* ── LEFT SIDEBAR — hidden on small phones, visible md+ ── */}
+      <div className="hidden sm:flex absolute left-4 md:left-8 lg:left-12 top-1/2 -translate-y-1/2 z-30 flex-col gap-2 md:gap-2.5">
         {sections.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => goTo(i)}
-            className="flex items-center gap-2 group text-left"
-          >
+          <button key={s.id} onClick={() => goTo(i)} className="flex items-center gap-2 text-left">
             <motion.span
               animate={{ opacity: i === activeIndex ? 1 : 0, x: i === activeIndex ? 0 : -4 }}
               transition={{ duration: 0.3 }}
@@ -175,14 +170,10 @@ export default function WaterIQ() {
         ))}
       </div>
 
-      {/* ── RIGHT SIDEBAR ────────────────────────── */}
-      <div className="absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1.5 md:gap-2.5 items-end">
+      {/* ── RIGHT SIDEBAR — hidden on small phones ── */}
+      <div className="hidden sm:flex absolute right-4 md:right-8 lg:right-12 top-1/2 -translate-y-1/2 z-30 flex-col gap-2 md:gap-2.5 items-end">
         {sections.map((s, i) => (
-          <button
-            key={s.id}
-            onClick={() => goTo(i)}
-            className="flex items-center gap-2 text-right group"
-          >
+          <button key={s.id} onClick={() => goTo(i)} className="flex items-center gap-2 text-right">
             <span
               className="uppercase transition-all duration-300"
               style={{
@@ -204,8 +195,8 @@ export default function WaterIQ() {
         ))}
       </div>
 
-      {/* ── CENTER TITLE + PROCEED ───────────────── */}
-      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-6 md:gap-8 px-16 md:px-32">
+      {/* ── CENTER TITLE + PROCEED ── */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 md:gap-7 px-8 sm:px-16 md:px-32">
         <AnimatePresence mode="wait">
           <motion.div
             key={active.id}
@@ -213,14 +204,14 @@ export default function WaterIQ() {
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: -20, filter: "blur(6px)" }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center gap-5 md:gap-7"
+            className="flex flex-col items-center gap-4 md:gap-6"
           >
-            {/* Section title */}
+            {/* Title */}
             <div
               className="text-white font-bold uppercase text-center leading-[0.88]"
               style={{
                 fontFamily: "var(--font-instrument-serif), Georgia, serif",
-                fontSize: "clamp(2.8rem, 13vw, 11rem)",
+                fontSize: "clamp(2.4rem, 13vw, 11rem)",
                 letterSpacing: "-0.02em",
                 textShadow: "0 2px 40px rgba(0,0,0,0.5)",
               }}
@@ -235,16 +226,16 @@ export default function WaterIQ() {
               rel="noopener noreferrer"
               className="group relative flex items-center gap-3 overflow-hidden"
               style={{
-                padding: "10px 32px",
+                padding: "10px 28px",
                 border: "1px solid rgba(255,255,255,0.35)",
                 backdropFilter: "blur(12px)",
                 background: "rgba(255,255,255,0.07)",
+                touchAction: "manipulation",
               }}
               whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.97 }}
+              whileTap={{ scale: 0.96 }}
               transition={{ duration: 0.2 }}
             >
-              {/* shine sweep on hover */}
               <motion.div
                 className="absolute inset-0 pointer-events-none"
                 initial={{ x: "-110%" }}
@@ -256,55 +247,50 @@ export default function WaterIQ() {
                 className="relative text-white uppercase"
                 style={{
                   fontFamily: "var(--font-geist-mono), monospace",
-                  fontSize: "clamp(0.55rem, 1.2vw, 0.72rem)",
+                  fontSize: "clamp(0.6rem, 1.2vw, 0.72rem)",
                   letterSpacing: "0.28em",
                   fontWeight: 600,
                 }}
               >
                 Proceed
               </span>
-              {/* arrow */}
-              <motion.svg
-                width="12" height="10" viewBox="0 0 12 10" fill="none"
-                className="relative text-white"
-                initial={{ x: 0, opacity: 0.5 }}
-                whileHover={{ x: 3, opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
+              <svg width="12" height="10" viewBox="0 0 12 10" fill="none" className="relative text-white opacity-60">
                 <path d="M0 5H11M7 1L11 5L7 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-              </motion.svg>
+              </svg>
             </motion.a>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* ── BOTTOM PROGRESS ──────────────────────── */}
+      {/* ── BOTTOM PROGRESS ── */}
       <div className="absolute bottom-0 left-0 right-0 z-30">
-        {/* Section numbers */}
-        <div className="flex justify-center items-center gap-2 md:gap-4 pb-3">
+        {/* Dot nav — mobile friendly */}
+        <div className="flex justify-center items-center gap-3 pb-4">
           {sections.map((s, i) => (
-            <React.Fragment key={s.id}>
-              <button
-                onClick={() => goTo(i)}
-                className="transition-all duration-300"
+            <button
+              key={s.id}
+              onClick={() => goTo(i)}
+              className="flex items-center gap-2 transition-all duration-300"
+              style={{ minWidth: 44, minHeight: 44, justifyContent: "center" }}
+              aria-label={s.name}
+            >
+              <span
                 style={{
                   fontFamily: "var(--font-geist-mono), monospace",
                   fontSize: "0.58rem",
                   letterSpacing: "0.12em",
                   color: i === activeIndex ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.2)",
                   fontWeight: i === activeIndex ? 600 : 400,
+                  display: "block",
                 }}
               >
                 {String(i + 1).padStart(2, "0")}
-              </button>
-              {i < sections.length - 1 && (
-                <div className="h-px bg-white/10" style={{ width: "clamp(20px, 4vw, 56px)" }} />
-              )}
-            </React.Fragment>
+              </span>
+            </button>
           ))}
         </div>
 
-        {/* Full-width progress fill */}
+        {/* Progress bar */}
         <div className="relative h-[1.5px] bg-white/10">
           <motion.div
             className="absolute top-0 left-0 h-full bg-white/55"
@@ -313,6 +299,18 @@ export default function WaterIQ() {
           />
         </div>
       </div>
+
+      {/* ── MOBILE SWIPE HINT (first visit only) ── */}
+      <motion.div
+        className="sm:hidden absolute bottom-16 left-0 right-0 flex justify-center z-30 pointer-events-none"
+        initial={{ opacity: 0.6 }}
+        animate={{ opacity: 0 }}
+        transition={{ delay: 2.5, duration: 1.5 }}
+      >
+        <span style={{ fontFamily: "var(--font-geist-mono), monospace", fontSize: "0.55rem", letterSpacing: "0.25em", color: "rgba(255,255,255,0.4)", textTransform: "uppercase" }}>
+          swipe to navigate
+        </span>
+      </motion.div>
     </div>
   );
 }
