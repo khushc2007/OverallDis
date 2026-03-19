@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 export default function HeroAsciiOne() {
   useEffect(() => {
+    // ── Load UnicornStudio ──
     const embedScript = document.createElement('script');
     embedScript.type = 'text/javascript';
     embedScript.textContent = `
@@ -21,10 +22,10 @@ export default function HeroAsciiOne() {
     `;
     document.head.appendChild(embedScript);
 
+    // ── CSS overrides: full-screen, upright, no branding ──
     const style = document.createElement('style');
     style.id = 'unicorn-overrides';
     style.textContent = `
-      /* ── Full-screen, upright, no tilt ── */
       [data-us-project] {
         position: absolute !important;
         inset: 0 !important;
@@ -34,73 +35,115 @@ export default function HeroAsciiOne() {
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        /* Remove any inherited transform that could cause tilt */
         transform: none !important;
+        rotate: none !important;
+        skew: none !important;
       }
       [data-us-project] canvas {
-        /* No crop, no rotation, no skew — perfectly upright */
         clip-path: none !important;
         transform: none !important;
-        max-width: 100% !important;
-        max-height: 100% !important;
+        rotate: none !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        display: block !important;
       }
       [data-us-project] * {
         pointer-events: none !important;
       }
-
-      /* ── Hide branding ── */
-      [data-us-project] a[href*="unicorn"],
-      [data-us-project] button[title*="unicorn"],
-      [data-us-project] div[title*="Made with"],
-      [data-us-project] .unicorn-brand,
+      /* ── Nuke every possible branding element ── */
+      [data-us-project] a,
+      [data-us-project] [class*="logo"],
       [data-us-project] [class*="brand"],
       [data-us-project] [class*="credit"],
-      [data-us-project] [class*="watermark"] {
+      [data-us-project] [class*="badge"],
+      [data-us-project] [class*="watermark"],
+      [data-us-project] [class*="made"],
+      [data-us-project] [id*="logo"],
+      [data-us-project] [id*="brand"],
+      [data-us-project] [id*="credit"],
+      [data-us-project] [id*="badge"],
+      [data-us-project] [id*="watermark"] {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+        pointer-events: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
         position: absolute !important;
-        left: -9999px !important;
-        top: -9999px !important;
+        left: -99999px !important;
+        top: -99999px !important;
+        clip: rect(0,0,0,0) !important;
+      }
+      /* Catch any fixed/absolute positioned overlay that UnicornStudio injects */
+      body > [style*="position: fixed"][style*="bottom"],
+      body > [style*="position:fixed"][style*="bottom"],
+      body > div[style*="z-index: 9"],
+      body > div[style*="z-index:9"] {
+        display: none !important;
       }
     `;
     document.head.appendChild(style);
 
-    const hideBranding = () => {
-      const selectors = [
-        '[data-us-project]',
-        '[data-us-project="OMzqyUv6M3kSnv0JeAtC"]',
-        '.unicorn-studio-container',
-        'canvas[aria-label*="Unicorn"]',
-      ];
-      selectors.forEach(selector => {
-        document.querySelectorAll(selector).forEach(container => {
-          (container.querySelectorAll('*') as NodeListOf<HTMLElement>).forEach(el => {
-            const text  = (el.textContent || '').toLowerCase();
-            const title = (el.getAttribute('title') || '').toLowerCase();
-            const href  = (el.getAttribute('href')  || '').toLowerCase();
-            if (
-              text.includes('made with') || text.includes('unicorn') ||
-              title.includes('made with') || title.includes('unicorn') ||
-              href.includes('unicorn.studio')
-            ) {
-              el.style.cssText +=
-                ';display:none!important;visibility:hidden!important;opacity:0!important;' +
-                'position:absolute!important;left:-9999px!important;top:-9999px!important;';
-              try { el.remove(); } catch (_) {}
-            }
-          });
+    // ── Aggressive DOM branding removal with MutationObserver ──
+    const BRAND_KEYWORDS = ['made with', 'unicorn', 'unicornstudio', 'powered by'];
+
+    const nukeEl = (el: HTMLElement) => {
+      el.style.cssText =
+        'display:none!important;visibility:hidden!important;opacity:0!important;' +
+        'pointer-events:none!important;position:absolute!important;' +
+        'left:-99999px!important;top:-99999px!important;width:0!important;height:0!important;';
+      try { el.remove(); } catch (_) {}
+    };
+
+    const scanAndNuke = () => {
+      // 1. Nuke anything inside the project container matching keywords
+      document.querySelectorAll('[data-us-project] *').forEach(node => {
+        const el = node as HTMLElement;
+        const text  = (el.textContent  || '').toLowerCase().trim();
+        const title = (el.getAttribute('title') || '').toLowerCase();
+        const href  = (el.getAttribute('href')  || '').toLowerCase();
+        const alt   = (el.getAttribute('alt')   || '').toLowerCase();
+        if (BRAND_KEYWORDS.some(k => text.includes(k) || title.includes(k) || href.includes(k) || alt.includes(k))) {
+          nukeEl(el);
+        }
+      });
+
+      // 2. Nuke any body-level overlays injected by the script (fixed position, high z-index, near bottom)
+      document.querySelectorAll('body > *').forEach(node => {
+        const el = node as HTMLElement;
+        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+        const cs = window.getComputedStyle(el);
+        const isFixed = cs.position === 'fixed';
+        const isHighZ = parseInt(cs.zIndex || '0', 10) > 100;
+        const isBottom = parseInt(cs.bottom || '-1', 10) >= 0;
+        const text = (el.textContent || '').toLowerCase();
+        if (isFixed && isHighZ && isBottom && BRAND_KEYWORDS.some(k => text.includes(k))) {
+          nukeEl(el);
+        }
+        // Also catch by href inside
+        el.querySelectorAll('a[href]').forEach(a => {
+          const h = (a.getAttribute('href') || '').toLowerCase();
+          if (BRAND_KEYWORDS.some(k => h.includes(k))) nukeEl(a as HTMLElement);
         });
       });
     };
 
-    hideBranding();
-    const interval = setInterval(hideBranding, 80);
-    const timers = [500, 1000, 2000, 5000, 10000].map(ms => setTimeout(hideBranding, ms));
+    scanAndNuke();
+    const interval = setInterval(scanAndNuke, 60);
+
+    // MutationObserver catches dynamically injected nodes
+    const observer = new MutationObserver(() => scanAndNuke());
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const timers = [300, 800, 1500, 3000, 6000, 12000].map(ms => setTimeout(scanAndNuke, ms));
 
     return () => {
       clearInterval(interval);
       timers.forEach(clearTimeout);
+      observer.disconnect();
       try { document.head.removeChild(embedScript); } catch (_) {}
       const s = document.getElementById('unicorn-overrides');
       if (s) try { document.head.removeChild(s); } catch (_) {}
@@ -108,23 +151,10 @@ export default function HeroAsciiOne() {
   }, []);
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        // No transform here — keep it perfectly straight
-      }}
-    >
+    <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'hidden' }}>
       <div
         data-us-project="OMzqyUv6M3kSnv0JeAtC"
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-        }}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
     </div>
   );
