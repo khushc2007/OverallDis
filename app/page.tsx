@@ -21,7 +21,7 @@ function StarField() {
     const s: { id:number; x:number; y:number; r:number; delay:number; dur:number }[] = [];
     let seed = 42;
     const rand = () => { seed = (seed * 1664525 + 1013904223) & 0xffffffff; return (seed >>> 0) / 0xffffffff; };
-    for (let i = 0; i < 220; i++) s.push({ id:i, x:rand()*100, y:rand()*100, r:rand()*1.4+0.25, delay:rand()*7, dur:rand()*3+2 });
+    for (let i = 0; i < 300; i++) s.push({ id:i, x:rand()*100, y:rand()*100, r:rand()*1.6+0.3, delay:rand()*7, dur:rand()*3+2 });
     return s;
   }, []);
   return (
@@ -168,8 +168,8 @@ export default function WaterIQHome() {
         background:`linear-gradient(to right,
           transparent 22%,
           rgba(0,0,0,0.25) 45%,
-          rgba(0,0,0,0.72) 65%,
-          rgba(0,0,0,0.88) 100%
+          rgba(0,0,0,0.55) 65%,
+          rgba(0,0,0,0.65) 100%
         ),linear-gradient(to bottom,
           rgba(0,0,0,0.42) 0%,
           transparent 12%,
@@ -421,18 +421,21 @@ export default function WaterIQHome() {
         </div>
       </div>
 
-      {/* Badge cover — desktop only, invisible gradient over UnicornStudio badge */}
+      {/* Badge cover — desktop only.
+          The UnicornStudio badge sits at z-index 2147483647 (max int), fixed, bottom-center.
+          We use z-index 2147483646 so we're just UNDER it but above everything else,
+          then a second div at 2147483648 to paint over it.
+          Height is exactly the badge height (~44px). pointer-events:none so dots work. */}
       <div
         className="hidden lg:block fixed pointer-events-none"
         style={{
           bottom: 0,
-          left: 0,
-          right: 0,
-          
-          width: "100vw",
-          height: 80,
-          zIndex: 35,
-          background: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 60%, rgba(0,0,0,0) 100%)",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 280,
+          height: 44,
+          zIndex: 2147483648,
+          background: "#000",
         }}
       />
 
