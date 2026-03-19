@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 export default function HeroAsciiOne() {
   useEffect(() => {
-    // ── Load UnicornStudio ──
+    // Load UnicornStudio
     const embedScript = document.createElement('script');
     embedScript.type = 'text/javascript';
     embedScript.textContent = `
@@ -22,7 +22,7 @@ export default function HeroAsciiOne() {
     `;
     document.head.appendChild(embedScript);
 
-    // ── CSS overrides: full-screen, upright, no branding ──
+    // CSS overrides
     const style = document.createElement('style');
     style.id = 'unicorn-overrides';
     style.textContent = `
@@ -32,27 +32,19 @@ export default function HeroAsciiOne() {
         width: 100% !important;
         height: 100% !important;
         overflow: hidden !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
         transform: none !important;
-        rotate: none !important;
-        skew: none !important;
       }
       [data-us-project] canvas {
         clip-path: none !important;
         transform: none !important;
-        rotate: none !important;
+        display: block !important;
         width: 100% !important;
         height: 100% !important;
-        object-fit: cover !important;
-        object-position: center center !important;
-        display: block !important;
       }
       [data-us-project] * {
         pointer-events: none !important;
       }
-      /* ── Nuke every possible branding element ── */
+      /* Nuke ALL branding - every possible selector */
       [data-us-project] a,
       [data-us-project] [class*="logo"],
       [data-us-project] [class*="brand"],
@@ -68,77 +60,86 @@ export default function HeroAsciiOne() {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
-        pointer-events: none !important;
         width: 0 !important;
         height: 0 !important;
-        overflow: hidden !important;
         position: absolute !important;
         left: -99999px !important;
         top: -99999px !important;
-        clip: rect(0,0,0,0) !important;
       }
-      /* Catch any fixed/absolute positioned overlay that UnicornStudio injects */
-      body > [style*="position: fixed"][style*="bottom"],
-      body > [style*="position:fixed"][style*="bottom"],
-      body > div[style*="z-index: 9"],
-      body > div[style*="z-index:9"] {
+      /* Kill any fixed overlay UnicornStudio injects into body */
+      body > div[style*="position: fixed"],
+      body > div[style*="position:fixed"] {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
       }
     `;
     document.head.appendChild(style);
 
-    // ── Aggressive DOM branding removal with MutationObserver ──
-    const BRAND_KEYWORDS = ['made with', 'unicorn', 'unicornstudio', 'powered by'];
+    const KEYWORDS = ['made with', 'unicorn', 'unicornstudio', 'powered by', 'uimix'];
 
     const nukeEl = (el: HTMLElement) => {
       el.style.cssText =
         'display:none!important;visibility:hidden!important;opacity:0!important;' +
         'pointer-events:none!important;position:absolute!important;' +
-        'left:-99999px!important;top:-99999px!important;width:0!important;height:0!important;';
+        'left:-99999px!important;top:-99999px!important;' +
+        'width:0!important;height:0!important;overflow:hidden!important;';
       try { el.remove(); } catch (_) {}
     };
 
     const scanAndNuke = () => {
-      // 1. Nuke anything inside the project container matching keywords
+      // 1. Kill anything inside project container matching branding keywords
       document.querySelectorAll('[data-us-project] *').forEach(node => {
         const el = node as HTMLElement;
+        const tag = el.tagName?.toLowerCase();
+        if (tag === 'canvas') return; // never nuke the canvas itself
         const text  = (el.textContent  || '').toLowerCase().trim();
         const title = (el.getAttribute('title') || '').toLowerCase();
         const href  = (el.getAttribute('href')  || '').toLowerCase();
-        const alt   = (el.getAttribute('alt')   || '').toLowerCase();
-        if (BRAND_KEYWORDS.some(k => text.includes(k) || title.includes(k) || href.includes(k) || alt.includes(k))) {
+        const src   = (el.getAttribute('src')   || '').toLowerCase();
+        if (KEYWORDS.some(k => text.includes(k) || title.includes(k) || href.includes(k) || src.includes(k))) {
           nukeEl(el);
         }
+        // Also nuke non-canvas, non-script elements that are absolutely positioned
+        // (the watermark badge is typically a small div/anchor floated in a corner)
+        if (tag === 'a' || tag === 'button') nukeEl(el);
       });
 
-      // 2. Nuke any body-level overlays injected by the script (fixed position, high z-index, near bottom)
+      // 2. Kill body-level fixed overlays
       document.querySelectorAll('body > *').forEach(node => {
         const el = node as HTMLElement;
-        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
-        const cs = window.getComputedStyle(el);
-        const isFixed = cs.position === 'fixed';
-        const isHighZ = parseInt(cs.zIndex || '0', 10) > 100;
-        const isBottom = parseInt(cs.bottom || '-1', 10) >= 0;
-        const text = (el.textContent || '').toLowerCase();
-        if (isFixed && isHighZ && isBottom && BRAND_KEYWORDS.some(k => text.includes(k))) {
-          nukeEl(el);
-        }
-        // Also catch by href inside
-        el.querySelectorAll('a[href]').forEach(a => {
-          const h = (a.getAttribute('href') || '').toLowerCase();
-          if (BRAND_KEYWORDS.some(k => h.includes(k))) nukeEl(a as HTMLElement);
-        });
+        const tag = el.tagName?.toLowerCase();
+        if (['script','style','link','noscript'].includes(tag)) return;
+        // Skip our own containers
+        if (el.id === 'unicorn-overrides') return;
+        if (el.hasAttribute('data-us-project')) return;
+        // Check if it's a fixed positioned overlay with branding text
+        try {
+          const cs = window.getComputedStyle(el);
+          const isFixed = cs.position === 'fixed' || cs.position === 'absolute';
+          const text = (el.textContent || '').toLowerCase();
+          if (isFixed && KEYWORDS.some(k => text.includes(k))) {
+            nukeEl(el);
+            return;
+          }
+          // High z-index fixed element near bottom = badge
+          const z = parseInt(cs.zIndex || '0', 10);
+          const bottom = parseInt(cs.bottom || '-1', 10);
+          if (isFixed && z > 50 && bottom >= 0 && bottom < 80) {
+            nukeEl(el);
+          }
+        } catch (_) {}
       });
     };
 
+    // Run immediately, on interval, and observe mutations
     scanAndNuke();
-    const interval = setInterval(scanAndNuke, 60);
+    const interval = setInterval(scanAndNuke, 50);
 
-    // MutationObserver catches dynamically injected nodes
-    const observer = new MutationObserver(() => scanAndNuke());
-    observer.observe(document.body, { childList: true, subtree: true });
+    const observer = new MutationObserver(() => { scanAndNuke(); });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
 
-    const timers = [300, 800, 1500, 3000, 6000, 12000].map(ms => setTimeout(scanAndNuke, ms));
+    const timers = [200, 500, 1000, 2000, 4000, 8000].map(ms => setTimeout(scanAndNuke, ms));
 
     return () => {
       clearInterval(interval);
