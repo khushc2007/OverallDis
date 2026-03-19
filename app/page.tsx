@@ -153,7 +153,7 @@ export default function WaterIQHome() {
         <div style={{
           position: "absolute",
           top: 0,
-          left: "calc(50vw - 28vh)",   // centres the figure horizontally
+          left: "calc(50vw + 5vh)",   // centres the figure horizontally
           width: "177.78vh",            // 16:9 aspect at full viewport height
           height: "100vh",
           flexShrink: 0,
@@ -420,6 +420,22 @@ export default function WaterIQHome() {
           />
         </div>
       </div>
+
+      {/* Badge cover — desktop only. Black block over the UnicornStudio watermark
+          which sits fixed at bottom-center. z-index 45 = above animation (10),
+          above vignette (20), below our UI (40) so nothing is blocked.
+          Pointer-events none so clicks pass through to our progress bar beneath. */}
+      <div
+        className="hidden lg:block fixed z-45 pointer-events-none"
+        style={{
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: 220,
+          height: 52,
+          background: "#000",
+        }}
+      />
 
       {/* Mobile swipe hint */}
       <motion.div className="lg:hidden absolute z-40 flex justify-center pointer-events-none"
