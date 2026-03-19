@@ -432,8 +432,8 @@ export default function WaterIQHome() {
           bottom: 0,
           left: "50%",
           transform: "translateX(-50%)",
-          width: 280,
-          height: 44,
+          width: 320,
+          height: 70,
           zIndex: 2147483648,
           background: "#000",
         }}
