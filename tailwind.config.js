@@ -8,6 +8,9 @@ module.exports = {
 ],
   theme: {
     extend: {
+      zIndex: {
+        '45': '45',
+      },
       screens: {
         short: { raw: "(max-height: 748px)" },
       },
