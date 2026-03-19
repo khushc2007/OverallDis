@@ -226,14 +226,14 @@ export default function WaterIQHome() {
       {/* Desktop — WATER IQ heading, top-right */}
       <div className="hidden lg:flex absolute z-30 pointer-events-none flex-col items-end"
         style={{ top:62, right:40 }}>
-        <span style={{ fontFamily:SERIF, fontStyle:"italic", fontSize:11, letterSpacing:"0.45em", color:"rgba(255,255,255,0.28)", textTransform:"uppercase", marginBottom:2 }}>The</span>
-        <span style={{ fontFamily:SERIF, fontStyle:"italic", fontWeight:700, fontSize:"clamp(1.8rem,3vw,2.8rem)", letterSpacing:"0.05em", textTransform:"uppercase", color:"#fff", lineHeight:1 }}>
+        <span style={{ fontFamily:SERIF, fontStyle:"italic", fontSize:13, letterSpacing:"0.45em", color:"rgba(255,255,255,0.28)", textTransform:"uppercase", marginBottom:3 }}>The</span>
+        <span style={{ fontFamily:SERIF, fontStyle:"italic", fontWeight:700, fontSize:"clamp(2.4rem,4vw,3.8rem)", letterSpacing:"0.05em", textTransform:"uppercase", color:"#fff", lineHeight:1 }}>
           WATER IQ
         </span>
         <div className="flex gap-0.5 mt-1.5 mb-1" style={{ opacity:0.25 }}>
-          {Array.from({length:18}).map((_,i)=>(<div key={i} style={{ width:2, height:2, borderRadius:"50%", background:"#fff" }} />))}
+          {Array.from({length:26}).map((_,i)=>(<div key={i} style={{ width:2, height:2, borderRadius:"50%", background:"#fff" }} />))}
         </div>
-        <span style={{ fontFamily:MONO, fontSize:9, letterSpacing:"0.26em", color:"rgba(255,255,255,0.2)", textTransform:"uppercase" }}>
+        <span style={{ fontFamily:MONO, fontSize:11, letterSpacing:"0.26em", color:"rgba(255,255,255,0.2)", textTransform:"uppercase" }}>
           What would you like to explore?
         </span>
       </div>
@@ -308,7 +308,7 @@ export default function WaterIQHome() {
               {active.name}
             </div>
             <div style={{ display:"flex", gap:4, opacity:0.22 }}>
-              {Array.from({length:18}).map((_,i)=>(<div key={i} style={{ width:2, height:2, borderRadius:"50%", background:"#fff" }} />))}
+              {Array.from({length:26}).map((_,i)=>(<div key={i} style={{ width:2, height:2, borderRadius:"50%", background:"#fff" }} />))}
             </div>
             <motion.a
               href={active.href} target="_blank" rel="noopener noreferrer"
