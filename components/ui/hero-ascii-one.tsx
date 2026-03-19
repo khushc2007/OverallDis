@@ -22,17 +22,33 @@ export default function HeroAsciiOne() {
     document.head.appendChild(embedScript);
 
     const style = document.createElement('style');
+    style.id = 'unicorn-overrides';
     style.textContent = `
+      /* ── Full-screen, upright, no tilt ── */
       [data-us-project] {
-        position: relative !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
         overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        /* Remove any inherited transform that could cause tilt */
+        transform: none !important;
       }
       [data-us-project] canvas {
-        clip-path: inset(0 0 10% 0) !important;
+        /* No crop, no rotation, no skew — perfectly upright */
+        clip-path: none !important;
+        transform: none !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
       }
       [data-us-project] * {
         pointer-events: none !important;
       }
+
+      /* ── Hide branding ── */
       [data-us-project] a[href*="unicorn"],
       [data-us-project] button[title*="unicorn"],
       [data-us-project] div[title*="Made with"],
@@ -59,19 +75,18 @@ export default function HeroAsciiOne() {
       ];
       selectors.forEach(selector => {
         document.querySelectorAll(selector).forEach(container => {
-          container.querySelectorAll('*').forEach(el => {
-            const text = (el.textContent || '').toLowerCase();
+          (container.querySelectorAll('*') as NodeListOf<HTMLElement>).forEach(el => {
+            const text  = (el.textContent || '').toLowerCase();
             const title = (el.getAttribute('title') || '').toLowerCase();
-            const href = (el.getAttribute('href') || '').toLowerCase();
+            const href  = (el.getAttribute('href')  || '').toLowerCase();
             if (
-              text.includes('made with') ||
-              text.includes('unicorn') ||
-              title.includes('made with') ||
-              title.includes('unicorn') ||
+              text.includes('made with') || text.includes('unicorn') ||
+              title.includes('made with') || title.includes('unicorn') ||
               href.includes('unicorn.studio')
             ) {
-              (el as HTMLElement).style.cssText +=
-                ';display:none!important;visibility:hidden!important;opacity:0!important;position:absolute!important;left:-9999px!important;top:-9999px!important;';
+              el.style.cssText +=
+                ';display:none!important;visibility:hidden!important;opacity:0!important;' +
+                'position:absolute!important;left:-9999px!important;top:-9999px!important;';
               try { el.remove(); } catch (_) {}
             }
           });
@@ -80,25 +95,37 @@ export default function HeroAsciiOne() {
     };
 
     hideBranding();
-    const interval = setInterval(hideBranding, 50);
-    const t1 = setTimeout(hideBranding, 500);
-    const t2 = setTimeout(hideBranding, 1000);
-    const t3 = setTimeout(hideBranding, 2000);
-    const t4 = setTimeout(hideBranding, 5000);
-    const t5 = setTimeout(hideBranding, 10000);
+    const interval = setInterval(hideBranding, 80);
+    const timers = [500, 1000, 2000, 5000, 10000].map(ms => setTimeout(hideBranding, ms));
 
     return () => {
       clearInterval(interval);
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5);
+      timers.forEach(clearTimeout);
       try { document.head.removeChild(embedScript); } catch (_) {}
-      try { document.head.removeChild(style); } catch (_) {}
+      const s = document.getElementById('unicorn-overrides');
+      if (s) try { document.head.removeChild(s); } catch (_) {}
     };
   }, []);
 
   return (
     <div
-      data-us-project="OMzqyUv6M3kSnv0JeAtC"
-      style={{ width: '100%', height: '100%', minHeight: '100vh' }}
-    />
+      style={{
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        // No transform here — keep it perfectly straight
+      }}
+    >
+      <div
+        data-us-project="OMzqyUv6M3kSnv0JeAtC"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    </div>
   );
 }
