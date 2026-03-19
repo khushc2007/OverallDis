@@ -153,7 +153,7 @@ export default function WaterIQHome() {
         <div style={{
           position: "absolute",
           top: 0,
-          left: "calc(50vw - 35vh)",   // centres the figure horizontally
+          left: "calc(50vw - 40vh)",   // centres the figure horizontally
           width: "177.78vh",            // 16:9 aspect at full viewport height
           height: "100vh",
           flexShrink: 0,
@@ -426,10 +426,11 @@ export default function WaterIQHome() {
         className="hidden lg:block fixed pointer-events-none"
         style={{
           bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: 320,
-          height: 72,
+          left: 0,
+          right: 0,
+          
+          width: "100vw",
+          height: 80,
           zIndex: 35,
           background: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.95) 60%, rgba(0,0,0,0) 100%)",
         }}
